@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-title">在线阅卷</div>
+
+<div class="card">
+  <h2>待阅考试</h2>
+  {% if exams %}
+  <table>
+    <thead><tr><th>考试名称</th><th>科目</th><th>答卷</th><th>已阅</th><th>待阅</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody>
+      {% for e in exams %}
+      {% set finished = e.papers|selectattr('status', 'eq', 'finished')|list|length %}
+      <tr>
+        <td>{{ e.name }}</td>
+        <td>{{ e.subject.name if e.subject else '-' }}</td>
+        <td>{{ e.papers|length }}</td>
+        <td>{{ finished }}</td>
+        <td>{{ e.papers|length - finished }}</td>
+        <td><span class="badge {% if e.status == 'finished' or e.status == 'published' %}badge-green{% else %}badge-amber{% endif %}">{{ e.status_name }}</span></td>
+        <td><a class="btn btn-sm btn-primary" href="{{ url_for('teacher.exam_papers', exam_id=e.id) }}">进入阅卷</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="empty">暂无考试</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">暂无考试</div>
+  {% endif %}
+</div>
+{% endblock %}

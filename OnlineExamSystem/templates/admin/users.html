@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-title">用户管理</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>教师管理</h2>
+    {% if current_user.role == 'super_admin' or current_user.role == 'admin' %}
+    <form method="post" action="{{ url_for('admin.create_teacher') }}" class="form-row" style="margin-bottom:14px">
+      <div style="flex:1"><input type="text" name="username" placeholder="教师账号" required></div>
+      <div style="flex:1"><input type="text" name="name" placeholder="姓名" required></div>
+      <button class="btn btn-primary">新增教师</button>
+    </form>
+    {% endif %}
+    <table>
+      <thead><tr><th>账号</th><th>姓名</th><th>默认密码</th><th>操作</th></tr></thead>
+      <tbody>
+        {% for t in teachers %}
+        <tr>
+          <td>{{ t.username }}</td><td>{{ t.name }}</td><td class="mono">123456</td>
+          <td><form method="post" action="{{ url_for('admin.delete_user', user_id=t.id) }}" onsubmit="return confirm('确认删除该教师？')">
+            <button class="btn btn-danger btn-sm">删除</button></form></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="empty">暂无教师</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>学生管理</h2>
+    <form method="post" action="{{ url_for('admin.create_student') }}" class="form-row" style="margin-bottom:14px">
+      <div style="flex:1"><input type="text" name="student_no" placeholder="学号" required></div>
+      <div style="flex:1"><input type="text" name="name" placeholder="姓名" required></div>
+      <button class="btn btn-primary">新增学生</button>
+    </form>
+    <table>
+      <thead><tr><th>学号</th><th>姓名</th><th>账号</th><th>默认密码</th><th>操作</th></tr></thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td>{{ s.student_no }}</td><td>{{ s.name }}</td><td>{{ s.username }}</td><td class="mono">123456</td>
+          <td><form method="post" action="{{ url_for('admin.delete_user', user_id=s.id) }}" onsubmit="return confirm('确认删除该学生？')">
+            <button class="btn btn-danger btn-sm">删除</button></form></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="empty">暂无学生</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if current_user.role == 'super_admin' %}
+<div class="card">
+  <h2>管理员管理（超级管理员）</h2>
+  <form method="post" action="{{ url_for('admin.create_admin') }}" class="form-row" style="margin-bottom:14px">
+    <div style="flex:1"><input type="text" name="username" placeholder="管理员账号" required></div>
+    <div style="flex:1"><input type="text" name="name" placeholder="姓名" required></div>
+    <button class="btn btn-primary">新增管理员</button>
+  </form>
+  <table>
+    <thead><tr><th>账号</th><th>姓名</th><th>默认密码</th><th>操作</th></tr></thead>
+    <tbody>
+      {% for a in admins %}
+      <tr>
+        <td>{{ a.username }}</td><td>{{ a.name }}</td><td class="mono">123456</td>
+        <td><form method="post" action="{{ url_for('admin.delete_user', user_id=a.id) }}" onsubmit="return confirm('确认删除该管理员？')">
+          <button class="btn btn-danger btn-sm">删除</button></form></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="empty">暂无管理员</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

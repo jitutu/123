@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}校内网上阅卷系统{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">网上阅卷系统</div>
+    <nav class="nav">
+      {% if current_user.role in ('super_admin', 'admin') %}
+      <a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if request.endpoint == 'admin.dashboard' }}">控制台</a>
+      <a href="{{ url_for('admin.users') }}" class="{{ 'active' if request.endpoint == 'admin.users' }}">用户管理</a>
+      <a href="{{ url_for('admin.exams') }}" class="{{ 'active' if request.endpoint in ('admin.exams', 'admin.exam_detail') }}">考试管理</a>
+      {% endif %}
+      {% if current_user.role == 'teacher' %}
+      <a href="{{ url_for('teacher.dashboard') }}" class="{{ 'active' if request.endpoint in ('teacher.dashboard', 'teacher.exam_papers') }}">在线阅卷</a>
+      {% endif %}
+      {% if current_user.role == 'student' %}
+      <a href="{{ url_for('student.results') }}" class="{{ 'active' if request.endpoint in ('student.results', 'student.result_detail') }}">我的成绩</a>
+      {% endif %}
+    </nav>
+    <div class="sidebar-foot">
+      <span class="user-info">{{ current_user.name }}（{{ current_user.role_name }}）</span>
+      <a class="logout" href="{{ url_for('auth.logout') }}">退出登录</a>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="flash-area">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+    </div>
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

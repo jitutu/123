@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="actions" style="justify-content: space-between; align-items:center; margin-bottom:14px;">
+  <div class="page-title" style="margin:0">阅卷设置 - {{ exam.name }}</div>
+  <a class="btn" href="{{ url_for('admin.exam_detail', exam_id=exam.id) }}">返回考试</a>
+</div>
+
+{% if not objectives and not subjectives %}
+<div class="alert alert-warning">当前尚未配置题目区域，请先完成答题卡模板框选配置（添加客观题/主观题区域）。</div>
+{% else %}
+<form method="post" action="{{ url_for('admin.save_settings', exam_id=exam.id) }}" id="settings-form">
+  <div class="card">
+    <h2>客观题答案与分值</h2>
+    {% if objectives %}
+    <table>
+      <thead><tr><th style="width:60px">题号</th><th>题型</th><th>标准答案</th><th style="width:120px">分值</th></tr></thead>
+      <tbody>
+        {% for o in objectives %}
+        <tr>
+          <td><strong>{{ o.qno }}</strong></td>
+          <td>
+            {% if o.type == 'single' %}单选
+            {% elif o.type == 'multi' %}多选
+            {% elif o.type == 'judge' %}判断
+            {% else %}{{ o.type }}{% endif %}
+          </td>
+          <td>
+            {% if o.type == 'single' %}
+            <select name="answer_{{ o.qno }}" style="width:140px">
+              <option value="">未设置</option>
+              {% for c in ['A','B','C','D'] %}
+              <option value="{{ c }}" {{ 'selected' if o.answer == c }}>{{ c }}</option>
+              {% endfor %}
+            </select>
+            {% elif o.type == 'judge' %}
+            <select name="answer_{{ o.qno }}" style="width:140px">
+              <option value="">未设置</option>
+              <option value="对" {{ 'selected' if o.answer == '对' }}>对</option>
+              <option value="错" {{ 'selected' if o.answer == '错' }}>错</option>
+            </select>
+            {% else %}
+            <span class="form-inline">
+              {% for c in ['A','B','C','D'] %}
+              <label style="margin-right:8px; display:flex; align-items:center; gap:3px">
+                <input type="checkbox" class="multi-chk" data-qno="{{ o.qno }}" value="{{ c }}"
+                       {{ 'checked' if c in (o.answer or '') }}>{{ c }}
+              </label>
+              {% endfor %}
+              <input type="hidden" name="answer_{{ o.qno }}" class="multi-answer" data-qno="{{ o.qno }}">
+            </span>
+            {% endif %}
+          </td>
+          <td><input type="number" name="score_{{ o.qno }}" value="{{ o.score }}" step="0.5" min="0" class="score-input"></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">尚未配置客观题</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>主观题分值</h2>
+    {% if subjectives %}
+    <table>
+      <thead><tr><th style="width:60px">题号</th><th>分值</th></tr></thead>
+      <tbody>
+        {% for s in subjectives %}
+        <tr>
+          <td><strong>{{ s.qno }}</strong></td>
+          <td><input type="number" name="sub_score_{{ s.qno }}" value="{{ s.score }}" step="0.5" min="0" class="score-input"></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">尚未配置主观题</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>双人评分</h2>
+    <div class="form-group">
+      <label style="display:flex; align-items:center; gap:8px">
+        <input type="checkbox" name="double_check" {{ 'checked' if double_check }}>
+        开启双人评分（两位教师分别评分）
+      </label>
+    </div>
+    <div class="form-group" style="max-width:200px">
+      <label>差值阈值（分）</label>
+      <input type="number" name="double_threshold" value="{{ double_threshold }}" step="0.5" min="0">
+      <p style="color:var(--muted); font-size:12px; margin-top:6px">两位教师评分差值超过阈值时，以较后评分作为终评。</p>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" type="submit">保存阅卷设置</button>
+</form>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('settings-form')?.addEventListener('submit', function () {
+  const groups = {};
+  document.querySelectorAll('.multi-chk').forEach(function (chk) {
+    const qno = chk.dataset.qno;
+    if (!groups[qno]) groups[qno] = [];
+    if (chk.checked) groups[qno].push(chk.value);
+  });
+  document.querySelectorAll('.multi-answer').forEach(function (input) {
+    input.value = groups[input.dataset.qno] ? groups[input.dataset.qno].join('') : '';
+  });
+});
+</script>
+{% endblock %}

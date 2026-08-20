@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="actions" style="justify-content: space-between; align-items:center; margin-bottom:14px;">
+  <div class="page-title" style="margin:0">{{ exam.name }} - 答卷列表</div>
+  <a class="btn" href="{{ url_for('teacher.dashboard') }}">返回阅卷台</a>
+</div>
+
+<div class="card">
+  {% if papers %}
+  <table>
+    <thead>
+      <tr><th>ID</th><th>学生</th><th>识别答案</th><th>状态</th><th>操作</th></tr>
+    </thead>
+    <tbody>
+      {% for p in papers %}
+      <tr>
+        <td>#{{ p.id }}</td>
+        <td>{{ p.student.student_no ~ ' ' ~ p.student.name if p.student else '未关联' }}</td>
+        <td>{{ '已识别' if p.recognized_answer else '-' }}</td>
+        <td>
+          {% if p.status == 'finished' %}<span class="badge badge-green">已阅</span>
+          {% elif p.status == 'checking' %}<span class="badge badge-amber">阅卷中</span>
+          {% else %}<span class="badge">待阅</span>{% endif %}
+        </td>
+        <td>
+          {% if p.student %}
+          <a class="btn btn-sm btn-primary" href="{{ url_for('teacher.mark', paper_id=p.id) }}">去阅卷</a>
+          {% else %}
+          <span class="badge badge-red">未关联学生</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">该考试暂无答卷</div>
+  {% endif %}
+</div>
+{% endblock %}

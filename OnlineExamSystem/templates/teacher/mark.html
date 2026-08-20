@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="actions" style="justify-content: space-between; align-items: center; margin-bottom: 10px;">
+  <div class="page-title" style="margin:0">
+    阅卷 - {{ paper.student.student_no ~ ' ' ~ paper.student.name if paper.student else '未关联学生' }}
+    {% if exam.double_check %}<span class="badge badge-amber">双评</span>{% endif %}
+  </div>
+  <a class="btn" href="{{ url_for('teacher.exam_papers', exam_id=exam.id) }}">返回答卷列表</a>
+</div>
+
+<div class="mark-layout">
+  <div class="mark-left">
+    <div class="mark-toolbar">
+      <button class="tool-btn" id="zoom-out">缩小</button>
+      <span id="zoom-label">100%</span>
+      <button class="tool-btn" id="zoom-in">放大</button>
+      <button class="tool-btn" id="zoom-fit">适应</button>
+      <span class="spacer"></span>
+      <button class="tool-btn active" id="side-front">正面</button>
+      <button class="tool-btn" id="side-back" {% if not paper.back_image %}disabled{% endif %}>反面</button>
+    </div>
+    <div class="mark-toolbar">
+      <button class="tool-btn active" data-tool="hand">移动</button>
+      <button class="tool-btn" data-tool="pen">画笔</button>
+      <button class="tool-btn" data-tool="text">文字</button>
+      <button class="tool-btn" data-tool="tick">对勾</button>
+      <button class="tool-btn" data-tool="cross">叉号</button>
+      <button class="tool-btn" data-tool="oval">圈画</button>
+      <button class="tool-btn" data-tool="underline">下划线</button>
+      <button class="tool-btn" data-tool="eraser">橡皮</button>
+      <span class="spacer"></span>
+      <button class="tool-btn" id="clear-ann">清空批注</button>
+      <span id="save-state" style="color: var(--muted); font-size: 12px; white-space: nowrap;">批注已同步</span>
+    </div>
+    <div class="paper-stage" id="paper-stage">
+      <canvas id="mark-canvas"></canvas>
+    </div>
+  </div>
+
+  <div class="mark-right">
+    <div class="alert alert-info" style="font-size: 13px;">逐题评分：填写分数后点击"保存"，输入即自动保存。可用画笔在左侧答题卡上批注，批注自动同步保存。</div>
+    {% for q in questions %}
+    <div class="q-card" data-qid="{{ q.id }}">
+      <div class="q-head">
+        <span class="q-no">第 {{ q.question_no }} 题</span>
+        <span class="q-type">{{ q.type_name }} · 满分 {{ q.score }}</span>
+      </div>
+      {% if q.type != 'subjective' %}
+      <div class="q-ans">标准答案：<strong>{{ q.answer }}</strong></div>
+      <div class="q-recognized" id="rec-{{ q.id }}"></div>
+      {% endif %}
+      <div class="form-inline" style="margin-top: 8px">
+        <label style="color: var(--muted)">得分</label>
+        <input type="number" class="score-input score-box" data-qid="{{ q.id }}" step="0.5" min="0"
+               max="{{ q.score }}" value="{{ my_scores.get(q.id, 0) }}">
+        <button class="btn btn-sm btn-primary score-save" data-qid="{{ q.id }}">保存</button>
+        {% if q.type == 'subjective' %}
+        <button class="btn btn-sm view-area" data-qno="{{ q.question_no }}">查看答题区域</button>
+        {% endif %}
+      </div>
+      <div class="q-recognized" id="scored-{{ q.id }}">
+        {% for s in score_map.get(q.id, []) %}
+        <span class="badge {{ 'badge-blue' if s.teacher != current_teacher.name else 'badge-green' }}">{{ s.teacher }}：{{ s.score }} 分</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="modal-mask" id="area-modal" style="display:none">
+  <div class="modal">
+    <div class="modal-head">
+      <span>答题区域</span>
+      <button class="btn btn-sm" id="close-modal">关闭</button>
+    </div>
+    <div class="modal-body">
+      <img id="area-img" style="max-width:100%" alt="答题区域">
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const PAPER_ID = {{ paper.id }};
+const FRONT_URL = "{{ url_for('admin.paper_image', paper_id=paper.id, side='front') }}";
+const BACK_URL = {% if paper.back_image %}"{{ url_for('admin.paper_image', paper_id=paper.id, side='back') }}"{% else %}null{% endif %};
+const SAVE_SCORE_URL = "{{ url_for('teacher.save_score') }}";
+const SAVE_ANN_URL = "{{ url_for('teacher.save_annotation') }}";
+const AREA_URL_PREFIX = "{{ url_for('teacher.subjective_image', paper_id=paper.id, qno=0) }}".slice(0, -1);
+const QUESTIONS = [
+  {% for q in questions %}
+  {id: {{ q.id }}, no: {{ q.question_no }}, type: '{{ q.type }}', score: {{ q.score }}, answer: '{{ q.answer or '' }}'},
+  {% endfor %}
+];
+const RECOGNIZED = JSON.parse({{ recognized|tojson }} || '{}');
+const ANNOTATIONS = JSON.parse({{ annotation_data|tojson }} || '[]');
+</script>
+<script src="{{ url_for('static', filename='js/mark.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,13 @@
+# 核心依赖（必须安装）
+Flask>=3.0.0
+Flask-SQLAlchemy
+Flask-Login
+opencv-python-headless  # 服务器/无 GUI 环境；桌面环境可换为 opencv-python
+numpy
+pillow
+openpyxl
+werkzeug
+
+# 可选依赖（增强功能，缺失时系统自动降级）
+# paddleocr          # OCR 数字识别（准考证号）
+# pyzbar             # 条码识别（需要系统 libzbar0）

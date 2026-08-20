@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-title">控制台</div>
+<div class="stats">
+  <div class="stat"><div class="num">{{ stats.exams }}</div><div class="label">考试总数</div></div>
+  <div class="stat"><div class="num">{{ stats.teachers }}</div><div class="label">教师账号</div></div>
+  <div class="stat"><div class="num">{{ stats.students }}</div><div class="label">学生账号</div></div>
+</div>
+
+<div class="card">
+  <div class="actions" style="justify-content: space-between; align-items:center;">
+    <h2 style="margin:0">最近考试</h2>
+    <a class="btn btn-primary" href="{{ url_for('admin.exams') }}">考试管理</a>
+  </div>
+  {% if exams %}
+  <table>
+    <thead><tr><th>考试名称</th><th>科目</th><th>日期</th><th>状态</th></tr></thead>
+    <tbody>
+      {% for e in exams[:8] %}
+      <tr>
+        <td><a href="{{ url_for('admin.exam_detail', exam_id=e.id) }}">{{ e.name }}</a></td>
+        <td>{{ e.subject.name if e.subject else '-' }}</td>
+        <td>{{ e.exam_date or '-' }}</td>
+        <td><span class="badge {% if e.status == 'published' %}badge-green{% elif e.status == 'finished' %}badge-blue{% else %}badge-amber{% endif %}">{{ e.status_name }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">暂无考试，请先前往考试管理创建考试</div>
+  {% endif %}
+</div>
+{% endblock %}

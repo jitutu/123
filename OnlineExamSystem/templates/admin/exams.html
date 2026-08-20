@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-title">考试管理</div>
+
+<div class="card">
+  <h2>创建考试</h2>
+  <form method="post" action="{{ url_for('admin.create_exam_route') }}">
+    <div class="form-row">
+      <div class="form-group" style="flex:1"><label>考试名称</label>
+        <input type="text" name="name" placeholder="例如：2026年期中考试" required></div>
+      <div class="form-group" style="flex:1"><label>考试日期</label>
+        <input type="date" name="exam_date" required></div>
+      <div class="form-group" style="flex:1"><label>科目</label>
+        <select name="subject_id" required>
+          <option value="">请选择科目</option>
+          {% for s in subjects %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+        </select></div>
+    </div>
+    <div class="form-group">
+      <label>参考学生（可多选）</label>
+      <select name="student_ids" multiple size="6" style="height:auto" required>
+        {% for st in students %}
+        <option value="{{ st.id }}">{{ st.student_no }} {{ st.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-primary">创建考试</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>考试列表</h2>
+  <table>
+    <thead><tr><th>考试名称</th><th>科目</th><th>日期</th><th>参考人数</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody>
+      {% for e in exams %}
+      <tr>
+        <td>{{ e.name }}</td>
+        <td>{{ e.subject.name if e.subject else '-' }}</td>
+        <td>{{ e.exam_date or '-' }}</td>
+        <td>{{ e.exam_students|length }}</td>
+        <td><span class="badge {% if e.status == 'published' %}badge-green{% elif e.status == 'finished' %}badge-blue{% elif e.status == 'checking' %}badge-amber{% else %}badge{% endif %}">{{ e.status_name }}</span></td>
+        <td><a class="btn btn-sm btn-primary" href="{{ url_for('admin.exam_detail', exam_id=e.id) }}">进入管理</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="empty">暂无考试</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

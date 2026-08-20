@@ -1,0 +1,17 @@
+**/__pycache__/
+*.pyc
+*.pyo
+
+# 运行时数据库
+**/database/*.db
+**/database/*.db-journal
+
+# 运行时上传文件
+**/uploads/papers/
+**/uploads/templates/
+**/uploads/backup/
+
+# 编辑器
+.vscode/
+.idea/
+.DS_Store

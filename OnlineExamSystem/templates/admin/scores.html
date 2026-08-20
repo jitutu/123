@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="actions" style="justify-content: space-between; align-items:center; margin-bottom:14px;">
+  <div class="page-title" style="margin:0">成绩管理 - {{ exam.name }}</div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('admin.exam_detail', exam_id=exam.id) }}">返回考试</a>
+    <a class="btn" href="{{ url_for('admin.export_scores', exam_id=exam.id) }}">导出 Excel</a>
+    <form method="post" action="{{ url_for('admin.finish_exam', exam_id=exam.id) }}" style="display:inline" onsubmit="return confirm('结束阅卷并计算成绩？')">
+      <button class="btn btn-warning">结束阅卷</button>
+    </form>
+    {% if exam.status != 'published' %}
+    <form method="post" action="{{ url_for('admin.publish_exam', exam_id=exam.id) }}" style="display:inline" onsubmit="return confirm('发布成绩后学生将可见，确认发布？')">
+      <button class="btn btn-success">发布成绩</button>
+    </form>
+    {% else %}
+    <span class="badge badge-green">已发布</span>
+    {% endif %}
+  </div>
+</div>
+
+{% if exam.double_check %}
+<div class="alert alert-info">本考试已开启双人评分，差值阈值 {{ exam.double_threshold }} 分。</div>
+{% endif %}
+
+<div class="card">
+  <h2>成绩表</h2>
+  {% if results %}
+  <table>
+    <thead>
+      <tr><th style="width:50px">排名</th><th>学号</th><th>姓名</th><th>客观题</th><th>主观题</th><th>总分</th></tr>
+    </thead>
+    <tbody>
+      {% for r in results %}
+      {% set st = students.get(r.student_id) %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ st.student_no if st else '-' }}</td>
+        <td>{{ st.name if st else '-' }}</td>
+        <td>{{ r.objective_score }}</td>
+        <td>{{ r.subjective_score }}</td>
+        <td><strong>{{ r.score }}</strong></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">暂无成绩，请先完成阅卷并执行"结束阅卷"</div>
+  {% endif %}
+</div>
+{% endblock %}

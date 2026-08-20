@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="actions" style="justify-content: space-between; align-items:center;">
+  <div class="page-title" style="margin:0">{{ exam.name }} <span class="badge {% if exam.status == 'published' %}badge-green{% elif exam.status == 'finished' %}badge-blue{% elif exam.status == 'checking' %}badge-amber{% endif %}">{{ exam.status_name }}</span></div>
+  <a class="btn" href="{{ url_for('admin.exams') }}">返回考试列表</a>
+</div>
+
+<div class="progress-steps">
+  <span class="step done">创建考试</span>
+  <span class="step {{ 'current' if exam.status == 'configuring' else ('done' if exam.status not in ('draft',) else '') }}">答题卡模板</span>
+  <span class="step {{ 'current' if exam.status == 'checking' else ('done' if exam.status in ('finished', 'published') else '') }}">阅卷设置</span>
+  <span class="step {{ 'done' if exam.papers else '' }}">上传答卷</span>
+  <span class="step {{ 'done' if exam.status in ('finished', 'published') else '' }}">成绩</span>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>基本信息</h2>
+    <table>
+      <tr><td>科目</td><td>{{ exam.subject.name if exam.subject else '-' }}</td></tr>
+      <tr><td>考试日期</td><td>{{ exam.exam_date or '-' }}</td></tr>
+      <tr><td>参考学生</td><td>{{ exam.exam_students|length }} 人</td></tr>
+      <tr><td>答卷数量</td><td>{{ exam.papers|length }} 份</td></tr>
+      <tr><td>双人评分</td><td>{{ '开启（阈值 %s 分）'|format(exam.double_threshold) if exam.double_check else '关闭' }}</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>答题卡模板</h2>
+    {% if exam.template and exam.template.image %}
+    <p>模板正面图：</p>
+    <img src="{{ url_for('admin.template_image', exam_id=exam.id, side='front') }}" style="max-width:100%; border:1px solid var(--border); border-radius:8px; margin-bottom:10px">
+    {% endif %}
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('admin.upload_template', exam_id=exam.id) }}">
+      <div class="form-group"><label>模板正面图片（jpg/png）</label>
+        <input type="file" name="front_image" accept="image/*"></div>
+      <div class="form-group"><label>模板反面图片（可空）</label>
+        <input type="file" name="back_image" accept="image/*"></div>
+      <div class="actions">
+        <button class="btn btn-primary">上传模板图</button>
+        {% if exam.template and exam.template.image %}
+        <a class="btn btn-success" href="{{ url_for('admin.template_config', exam_id=exam.id) }}">区域框选配置</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>阅卷设置</h2>
+    <p style="color:var(--muted); margin-bottom:12px">配置客观题答案与分值、主观题分值、双人评分规则。</p>
+    <a class="btn btn-primary" href="{{ url_for('admin.settings', exam_id=exam.id) }}">进入阅卷设置</a>
+  </div>
+
+  <div class="card">
+    <h2>上传答卷</h2>
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('admin.upload_papers', exam_id=exam.id) }}">
+      <div class="form-group"><label>答卷图片（可批量，jpg/png）</label>
+        <input type="file" name="papers" accept="image/*" multiple required></div>
+      <div class="actions">
+        <button class="btn btn-primary">上传答卷</button>
+        <button class="btn btn-success" formmethod="post" formaction="{{ url_for('admin.recognize', exam_id=exam.id) }}">执行识别</button>
+      </div>
+    </form>
+    <p style="color:var(--muted); font-size:12px; margin-top:10px">上传后点击"执行识别"：自动识别准考证号并匹配学生、识别客观题并自动评分。</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2>答卷列表（{{ exam.papers|length }} 份）</h2>
+  {% if exam.papers %}
+  <table>
+    <thead>
+      <tr><th>ID</th><th>正面图</th><th>学生</th><th>状态</th><th>操作</th></tr>
+    </thead>
+    <tbody>
+      {% for p in exam.papers %}
+      <tr>
+        <td>#{{ p.id }}</td>
+        <td>
+          {% if p.image %}
+          <a href="{{ url_for('admin.paper_image', paper_id=p.id, side='front') }}" target="_blank">
+            <img src="{{ url_for('admin.paper_image', paper_id=p.id, side='front') }}" style="height:60px; border:1px solid var(--border); border-radius:6px">
+          </a>
+          {% endif %}
+        </td>
+        <td>
+          {% if p.student %}{{ p.student.student_no }} {{ p.student.name }}
+          {% else %}
+          <form method="post" action="{{ url_for('admin.assign_student', exam_id=exam.id, paper_id=p.id) }}" class="form-inline">
+            <select name="student_id">
+              <option value="">未识别</option>
+              {% for es in exam.exam_students %}
+              <option value="{{ es.student.id }}">{{ es.student.student_no }} {{ es.student.name }}</option>
+              {% endfor %}
+            </select>
+            <button class="btn btn-sm btn-primary">关联</button>
+          </form>
+          {% endif %}
+        </td>
+        <td>
+          {% if p.status == 'finished' %}<span class="badge badge-green">已阅</span>
+          {% elif p.status == 'checking' %}<span class="badge badge-amber">阅卷中</span>
+          {% else %}<span class="badge">待阅</span>{% endif %}
+        </td>
+        <td>
+          {% if p.student %}
+          <a class="btn btn-sm" href="{{ url_for('admin.paper_image', paper_id=p.id, side='front') }}" target="_blank">查看原图</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="empty">尚未上传答卷</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">尚未上传答卷</div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>成绩管理</h2>
+  <div class="actions">
+    <a class="btn btn-primary" href="{{ url_for('admin.scores', exam_id=exam.id) }}">查看成绩</a>
+    <form method="post" action="{{ url_for('admin.finish_exam', exam_id=exam.id) }}"
+          onsubmit="return confirm('结束阅卷并计算成绩？')">
+      <button class="btn btn-warning">结束阅卷</button>
+    </form>
+    <form method="post" action="{{ url_for('admin.publish_exam', exam_id=exam.id) }}"
+          onsubmit="return confirm('发布成绩后学生将可见，确认发布？')">
+      <button class="btn btn-success">发布成绩</button>
+    </form>
+    <a class="btn" href="{{ url_for('admin.export_scores', exam_id=exam.id) }}">导出 Excel</a>
+  </div>
+</div>
+{% endblock %}
